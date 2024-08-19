@@ -4,18 +4,21 @@ import com.game.entity.Player;
 import com.game.entity.Profession;
 import com.game.entity.Race;
 import com.game.repository.PlayerRepository;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Logger;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @Service
 public class PlayerService {
+
     private final PlayerRepository playerRepository;
 
     public PlayerService(@Autowired PlayerRepository playerRepository) {
@@ -28,6 +31,14 @@ public class PlayerService {
 
     public Integer getAllCount() {
         return playerRepository.getAllCount();
+    }
+
+    public List<String> getAllRace(){
+        return playerRepository.getAllRace();
+    }
+
+    public List<String> getAllProfession(){
+        return playerRepository.getAllProfession();
     }
 
     public Player createPlayer(String name, String title, Race race, Profession profession, long birthday, boolean banned, int level) {

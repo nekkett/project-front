@@ -5,12 +5,10 @@ import com.game.entity.Profession;
 import com.game.entity.Race;
 import org.springframework.stereotype.Repository;
 
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository
 public class PlayerRepository {
@@ -69,6 +67,19 @@ public class PlayerRepository {
     public int getAllCount() {
         return storage.size();
     }
+
+    public List<String> getAllRace() {
+        return Stream.of(Race.values())
+                .map(Enum::name)
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getAllProfession() {
+        return Stream.of(Profession.values())
+                .map(Enum::name)
+                .collect(Collectors.toList());
+    }
+
 
     public Player save(Player player) {
         player.setId(getMaxId() + 1);

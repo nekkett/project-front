@@ -6,6 +6,235 @@
 </head>
 <body>
 <h1>RPG admin panel</h1>
+<h2>Accounts list</h2>
+    <div id="playersOnPage">
+        <label for="pageSize">Count per page:</label>
+        <select id="pageSize" onchange="updatePageSize()">
+            <option value="3">3</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+        </select>
+    </div>
+    <table id="playersTable">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Title</th>
+            <th>Race</th>
+            <th>Profession</th>
+            <th>Level</th>
+            <th>Birthday</th>
+            <th>Banned</th>
+            <th>Delete</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Data rows from function fetchPlayers -->
+        </tbody>
+    </table>
+
+    <div id="pagination">
+        <!-- Buttons for pagination will be added here -->
+    </div>
+
+    <hr>
+
+    <div>
+        <p>Create new account:</p>
+        <form id = "createPlayerForm" onsubmit="createPlayer(event)">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" minlength="1" maxlength="12" required><br><br>
+
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" minlength="1" maxlength="30" required><br><br>
+
+            <label for="race">Rave:</label>
+            <select id="race" name="race" required>
+                <!-- list from func fillRaceList -->
+            </select> <br><br>
+
+            <label for="profession">Profession:</label>
+            <select id="profession" name="profession" required>
+                <!-- list from func fillProfessionList -->
+            </select> <br><br>
+
+            <label for="level">Level:</label>
+            <input type="number" id="level" name="level" min="0" max="100" required><br><br>
+
+            <label for="birthday">Birthday:</label>
+            <input type="date" id="birthday" name="birthday" required><br><br>
+
+            <label for="banned">Banned:</label>
+            <input type="checkbox" id="banned" name="banned"><br><br>
+
+            <button type="submit">Create Account</button>
+        </form>
+    </div>
+
+
+
+    <script>
+        let pageSize = 3;
+        let currentPage = 1;
+        let totalPlayers = 0;
+
+        async function fetchPlayers(){
+            try {
+                console.log('Fetching players...');
+                const response = await fetch(`/rest/players?pageSize=${pageSize}&pageNumber=${currentPage-1}`);
+                console.log('Response received:', response);
+                if (!response.ok){
+                    throw  new Error('Network response was not ok' + response.statusText);
+                }
+                const players = await response.json();
+                console.log('Players data:', players);
+                const tableBody = document.getElementById('playersTable').querySelector('tbody');
+                tableBody.innerHTML = '';
+
+                players.forEach((player,index) => {
+                    const row = document.createElement('tr');
+
+                    row.innerHTML = `
+                        <td>${player.id}</td>
+                        <td>${player.name}</td>
+                        <td>${player.title}</td>
+                        <td>${player.race}</td>
+                        <td>${player.profession}</td>
+                        <td>${player.level}</td>
+                        <td>${new Date(player.birthday).toLocaleDateString()}</td>
+                        <td>${player.banned ? 'Yes': 'No'}</td>
+                        <td><img src="/img/delete.png" alt="Delete"  onclick="deletePlayer(${player.id})" ></td>
+                        `;
+
+                    tableBody.appendChild(row);
+                });
+
+                updatePagination();
+            } catch (error){
+                console.error('There was a problem with the fetch operation fetchPlayers:', error);
+            }
+        }
+
+        async function fetchTotalPlayers(){
+            try{
+                const response = await fetch('/rest/players/count');
+                if(!response.ok){
+                    throw new Error('Network in func fetchTotalPlayers response was not ok ' + response.statusText);
+                }
+
+                totalPlayers = await response.json();
+                updatePagination();
+            } catch (error){
+                console.error('There was a problem with the fetch operation fetchTotalPlayers:', error)
+            }
+        }
+
+        async function deletePlayer(playerId){
+            const url = `/rest/players/${playerId}`;
+            try {
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                });
+                if (response.ok){
+                    await fetchPlayers();
+                }
+            } catch (error){
+                console.error('There was a problem with the delete operation deletePlayer:', error)
+            }
+        }
+        function updatePageSize(){
+            pageSize = parseInt(document.getElementById('pageSize').value);
+            fetchPlayers();
+        }
+
+        function updatePagination(){
+            const paginationDiv = document.getElementById('pagination');
+            paginationDiv.innerHTML = '';
+
+            const totalPages = Math.ceil(totalPlayers / pageSize);
+            for (let i= 1; i<=totalPages; i++){
+                const button = document.createElement('button');
+                button.innerText = i;
+                button.disabled = i === currentPage;
+                button.onclick = () => {
+                    currentPage = i;
+                    fetchPlayers();
+                };
+                paginationDiv.appendChild(button);
+            }
+        }
+
+        async function fillDictList(url, selectId){
+
+            try{
+                const response = await fetch(url);
+                if(!response.ok){
+                    throw new Error('Network in func fillDictList response was not ok ' + response.statusText);
+                }
+
+                const dictList = await response.json();
+                const dictSelect = document.getElementById(selectId);
+
+                dictList.forEach(value =>{
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    dictSelect.appendChild(option);
+                } );
+            } catch (error){
+                console.error('There was a problem with the fetch operation fillDictList:', error)
+            }
+        }
+
+        function fillDict(){
+            fillDictList('/rest/players/enumProfession', "profession");
+            fillDictList('/rest/players/enumRace', "race");
+        }
+
+        async function createPlayer(event){
+            event.preventDefault();
+
+            const form = document.getElementById('createPlayerForm');
+            const formData = new FormData(form);
+            const playerData = Object.fromEntries(formData.entries());
+            playerData.banned = document.getElementById('banned').checked;
+            playerData.birthday = new Date(playerData.birthday).getTime();
+            playerData.level = parseInt(playerData.level, 10);
+
+
+            console.log('Player data to send:', JSON.stringify(playerData));
+            try{
+                const response = await fetch(`/rest/players`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(playerData)
+                });
+
+                //console.error(JSON.stringify(playerData));
+
+                if (response.ok){
+                    console.log('Player created successfully.');
+                    await fetchPlayers(); // Обновление списка игроков после создания нового
+                    form.reset();
+                } else {
+                    console.error('Failed to create player:', response.status, response.statusText);
+                }
+            } catch (error) {
+                console.error('There was a problem with the fetch operation in func createPlayer:', error);
+            }
+        }
+
+
+        window.onload = () =>{
+            fetchTotalPlayers();
+            fetchPlayers();
+            fillDict();
+        };
+    </script>
 
 </body>
 </html>

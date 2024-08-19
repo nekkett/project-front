@@ -2,6 +2,7 @@ package com.game.controller;
 
 import com.game.entity.Player;
 import com.game.service.PlayerService;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
@@ -20,7 +22,6 @@ import static java.util.Objects.nonNull;
 @RestController
 @RequestMapping("/rest/players")
 public class PlayerController {
-
     private final PlayerService playerService;
 
     public PlayerController(@Autowired PlayerService playerService) {
@@ -42,6 +43,12 @@ public class PlayerController {
         return playerService.getAllCount();
     }
 
+    @GetMapping("/enumRace")
+    public List<String> getAllRace() {return playerService.getAllRace();}
+
+    @GetMapping("/enumProfession")
+    public List<String> getAllProfession() {return playerService.getAllProfession();}
+
     @PostMapping
     public ResponseEntity<PlayerInfo> createPlayer(@RequestBody PlayerInfo info) {
         if (StringUtils.isEmpty(info.name) || info.name.length() > 12) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -58,6 +65,7 @@ public class PlayerController {
 
         Player player = playerService.createPlayer(info.name, info.title, info.race, info.profession, info.birthday, banned, info.level);
         return ResponseEntity.status(HttpStatus.OK).body(toPlayerInfo(player));
+        //return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
     @PostMapping("/{ID}")
